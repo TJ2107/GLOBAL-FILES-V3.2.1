@@ -13,6 +13,7 @@ import { BatteryTracker } from './components/BatteryTracker';
 import { BeltTracker } from './components/BeltTracker';
 import { ExportManager } from './components/ExportManager';
 import { PredictiveAI } from './components/PredictiveAI';
+import { SettingsPanel } from './components/SettingsPanel';
 import { 
   Layout, Database, PieChart, Calendar, Timer, 
   Briefcase, Battery, Settings2, Loader2, 
@@ -46,6 +47,10 @@ const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
+  // State for alert thresholds
+  const [batteryThreshold, setBatteryThreshold] = useState<number>(7);
+  const [beltThreshold, setBeltThreshold] = useState<number>(180);
+
   // LOGIQUE DE CENTRALISATION DES ALERTES
   const globalAlerts = useMemo(() => {
     const alerts: { id: string; type: 'CRITICAL' | 'WARNING'; category: string; title: string; desc: string; swo?: string }[] = [];
@@ -61,12 +66,16 @@ const App: React.FC = () => {
       const site = String(row["Nom du site"] || "Unknown").trim().toUpperCase();
       const date = parseDate(row["Closing date"]) || parseDate(row["Date de Clôture"]);
       const swo = String(row["N° SWO"]);
+      const swoState = String(row["State SWO"] || "").toLowerCase();
       
       if (!date) return;
 
-      if (desc.includes("batterie")) {
-        if (!batterySites[site] || date > batterySites[site].date) batterySites[site] = { date, swo };
+      if (desc.includes("remplacement batterie ge") && swoState === 'closed') {
+        if (!batterySites[site] || date > batterySites[site].date) {
+          batterySites[site] = { date, swo };
+        }
       }
+      
       if (desc.includes("courroie")) {
         if (!beltSites[site] || date > beltSites[site].date) beltSites[site] = { date, swo };
       }
@@ -75,7 +84,7 @@ const App: React.FC = () => {
     // Alertes Batteries
     Object.entries(batterySites).forEach(([site, info]) => {
       const months = (now.getFullYear() - info.date.getFullYear()) * 12 + (now.getMonth() - info.date.getMonth());
-      if (months >= 7) {
+      if (months >= batteryThreshold) {
         alerts.push({ id: `bat-${site}`, type: 'CRITICAL', category: 'Batterie', title: site, desc: `Expirée (${months} mois)`, swo: info.swo });
       }
     });
@@ -83,7 +92,7 @@ const App: React.FC = () => {
     // Alertes Courroies
     Object.entries(beltSites).forEach(([site, info]) => {
       const diffDays = Math.floor((now.getTime() - info.date.getTime()) / (1000 * 3600 * 24));
-      if (diffDays >= 180) {
+      if (diffDays >= beltThreshold) {
         alerts.push({ id: `belt-${site}`, type: 'CRITICAL', category: 'Courroie', title: site, desc: `Seuil 1000h dépassé (${diffDays}j)`, swo: info.swo });
       }
     });
@@ -122,6 +131,19 @@ const App: React.FC = () => {
     localStorage.setItem('globalFiles_data', JSON.stringify(data));
   }, [data]);
 
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('globalFiles_settings');
+    if (savedSettings) {
+      try {
+        const { batteryThreshold, beltThreshold } = JSON.parse(savedSettings);
+        if (typeof batteryThreshold === 'number') setBatteryThreshold(batteryThreshold);
+        if (typeof beltThreshold === 'number') setBeltThreshold(beltThreshold);
+      } catch (e) { 
+        console.error("Failed to parse settings from localStorage", e); 
+      }
+    }
+  }, []);
+
   const handleDataLoaded = (newData: GlobalFileRow[], append: boolean) => {
     if (append && data.length > 0) {
       const swoMap = new Map<string, GlobalFileRow>();
@@ -147,6 +169,13 @@ const App: React.FC = () => {
       setActiveTab('data');
     }
     setIsNotifOpen(false);
+  };
+
+  const handleSaveSettings = (newBattery: number, newBelt: number) => {
+    setBatteryThreshold(newBattery);
+    setBeltThreshold(newBelt);
+    localStorage.setItem('globalFiles_settings', JSON.stringify({ batteryThreshold: newBattery, beltThreshold: newBelt }));
+    setActiveTab('dashboard');
   };
 
   const NavButton = ({ id, label, icon: Icon, alertCount, colorClass, isNew }: { id: string, label: string, icon: any, alertCount?: number, colorClass?: string, isNew?: boolean }) => {
@@ -311,6 +340,14 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 )}
+                {activeTab === 'settings' && 
+                  <SettingsPanel 
+                    initialBatteryThreshold={batteryThreshold}
+                    initialBeltThreshold={beltThreshold}
+                    onSave={handleSaveSettings}
+                    onCancel={() => setActiveTab('dashboard')}
+                  />
+                }
               </div>
             )}
           </Suspense>
