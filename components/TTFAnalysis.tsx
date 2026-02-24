@@ -281,7 +281,7 @@ export const TTFAnalysis: React.FC<TTFAnalysisProps> = ({ data, onFilterChange, 
              <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Performance par Priorité</h3>
              <button onClick={() => downloadChartAsJpg(priorityChartRef, 'respect_sla')} className="p-2 text-slate-300 hover:text-indigo-600 transition-colors"><Camera className="w-5 h-5" /></button>
           </div>
-          <div className="flex-1 min-h-[300px]">
+          <div className="flex-1 min-h-[300px] min-w-0 relative">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <BarChart data={analysis.chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -301,7 +301,7 @@ export const TTFAnalysis: React.FC<TTFAnalysisProps> = ({ data, onFilterChange, 
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Tendance de Résolution</h3>
               <button onClick={() => downloadChartAsJpg(trendChartRef, 'tendance_sla')} className="p-2 text-slate-300 hover:text-indigo-600 transition-colors"><Camera className="w-5 h-5" /></button>
            </div>
-           <div className="flex-1 min-h-[300px]">
+           <div className="flex-1 min-h-[300px] min-w-0 relative">
               <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                  <ComposedChart data={analysis.trendData}>
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

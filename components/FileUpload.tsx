@@ -1,18 +1,20 @@
 
 import React, { useCallback, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, Loader2, Database, ListPlus, RefreshCcw, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, Loader2, Database, ListPlus, RefreshCcw, X, RefreshCw } from 'lucide-react';
 import { GlobalFileRow } from '../types';
 import { normalizeRow } from '../utils/dataNormalization';
+import { fetchPMData } from '../services/pmApiService';
 
 interface FileUploadProps {
-  onDataLoaded: (data: GlobalFileRow[], append: boolean) => void;
+  onDataLoaded: (data: GlobalFileRow[], append: boolean, targetTab?: string) => void;
   existingDataCount: number;
   className?: string;
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, existingDataCount, className = "" }) => {
   const [loading, setLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [pendingData, setPendingData] = useState<GlobalFileRow[] | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
@@ -67,6 +69,27 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, existingDa
     if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
   };
 
+  const handleSyncAPI = async () => {
+    setIsSyncing(true);
+    try {
+      const apiData = await fetchPMData();
+      if (apiData.length > 0) {
+        if (existingDataCount > 0) {
+          setPendingData(apiData);
+        } else {
+          onDataLoaded(apiData, false, 'pm');
+        }
+      } else {
+        alert("Aucune donnée PM trouvée sur l'API.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de la synchronisation des données PM.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className={`w-full max-w-2xl relative ${className}`}>
       {/* Modal de choix si données existantes */}
@@ -90,7 +113,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, existingDa
 
             <div className="space-y-3">
               <button 
-                onClick={() => { onDataLoaded(pendingData, true); setPendingData(null); }}
+                onClick={() => { onDataLoaded(pendingData, true, 'pm'); setPendingData(null); }}
                 className="w-full flex items-center justify-between p-4 bg-white border-2 border-indigo-100 rounded-2xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group"
               >
                 <div className="flex items-center gap-3">
@@ -106,7 +129,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, existingDa
               </button>
 
               <button 
-                onClick={() => { onDataLoaded(pendingData, false); setPendingData(null); }}
+                onClick={() => { onDataLoaded(pendingData, false, 'pm'); setPendingData(null); }}
                 className="w-full flex items-center justify-between p-4 bg-white border-2 border-slate-100 rounded-2xl hover:border-red-600 hover:bg-red-50 transition-all group"
               >
                 <div className="flex items-center gap-3">
@@ -148,16 +171,27 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, existingDa
               Glissez votre fichier <span className="text-indigo-600 font-bold">.xlsx</span> ici ou utilisez le bouton pour mettre à jour vos indicateurs.
             </p>
             
-            <label className="relative cursor-pointer bg-slate-900 text-white px-10 py-5 rounded-2xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-200 active:scale-95 flex items-center gap-3 font-black text-sm uppercase tracking-widest">
-              <Upload className="w-5 h-5" />
-              <span>Parcourir</span>
-              <input 
-                type="file" 
-                className="hidden" 
-                accept=".xlsx, .xls, .csv"
-                onChange={handleChange}
-              />
-            </label>
+            <div className="flex flex-wrap justify-center gap-4">
+              <label className="relative cursor-pointer bg-slate-900 text-white px-10 py-5 rounded-2xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-200 active:scale-95 flex items-center gap-3 font-black text-sm uppercase tracking-widest">
+                <Upload className="w-5 h-5" />
+                <span>Parcourir</span>
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept=".xlsx, .xls, .csv"
+                  onChange={handleChange}
+                />
+              </label>
+
+              <button
+                onClick={handleSyncAPI}
+                disabled={isSyncing}
+                className="bg-white border-2 border-indigo-100 text-indigo-600 px-10 py-5 rounded-2xl hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm active:scale-95 flex items-center gap-3 font-black text-sm uppercase tracking-widest disabled:opacity-50"
+              >
+                <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>Sync PM API</span>
+              </button>
+            </div>
           </>
         )}
       </div>

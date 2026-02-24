@@ -4,20 +4,25 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "tsx server.ts",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/genai": "^1.41.0",
+    "@types/express": "^5.0.6",
+    "axios": "^1.13.5",
+    "express": "^5.2.1",
+    "html-to-image": "1.11.11",
+    "jspdf": "^2.5.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.561.0",
+    "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^3.6.0",
-    "react": "^19.2.3",
-    "lucide-react": "^0.561.0",
-    "xlsx": "^0.18.5",
-    "html-to-image": "1.11.11",
-    "leaflet": "^1.9.4",
-    "@google/genai": "^1.41.0",
-    "jspdf": "^2.5.1"
+    "tsx": "^4.21.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

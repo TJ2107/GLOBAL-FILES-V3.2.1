@@ -304,8 +304,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
              </h3>
              <button onClick={() => downloadChartAsJpg(pieChartRef, 'statut_x')} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-400 transition-all"><Camera className="w-5 h-5" /></button>
           </div>
-          {/* Flex-1 avec minHeight pour sécuriser ResponsiveContainer */}
-          <div className="flex-1 min-h-[300px]">
+          {/* Flex-1 avec min-w-0 pour sécuriser ResponsiveContainer */}
+          <div className="flex-1 min-h-[300px] min-w-0 relative">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <PieChart>
                 <Pie data={statsByX} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={5} onClick={(data) => handleChartClick(data, "X")} className="cursor-pointer">
@@ -326,7 +326,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
              </h3>
              <button onClick={() => downloadChartAsJpg(regionChartRef, 'production_region')} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-400 transition-all"><Camera className="w-5 h-5" /></button>
           </div>
-          <div className="flex-1 min-h-[300px]">
+          <div className="flex-1 min-h-[300px] min-w-0 relative">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <BarChart data={pivotTableData} margin={{ bottom: 40 }} onClick={(e) => handleChartClick(e, "Region")}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
