@@ -142,14 +142,17 @@ export const PMTracker: React.FC<PMTrackerProps> = ({ data, onFilterChange, onSw
 
   const exportPMReport = () => {
     const exportData = pmStats.detailList.map(row => ({
-      "ID site": row["ID"],
-      "PM number": row["PM number"],
-      "site names": row["Nom du site"],
-      "date planifié": formatDateDisplay(row["PM Date"]),
-      "type de PM": row["Types de PM"],
-      "FE names": row["FE names"],
-      "execution": formatDateDisplay(row["PM date execute"]),
-      "replanifié statut": row["PM date replanifiée"] ? formatDateDisplay(row["PM date replanifiée"]) : (row["status"] || row["State SWO"] || "OPEN")
+      "ID Site": row["ID"],
+      "PM Number": row["PM number"],
+      "Site": row["Nom du site"],
+      "Région": row["Region"],
+      "Type PM": row["Types de PM"],
+      "FE Names": row["FE names"],
+      "Date Prévue": formatDateDisplay(row["PM Date"]),
+      "Date Exécutée": formatDateDisplay(row["PM date execute"]),
+      "Date Replanifiée": formatDateDisplay(row["PM date replanifiée"]),
+      "Status": row["status"],
+      "Diagnostic": row.pmStatus === 'OK' ? 'CONFORME' : row.pmStatus === 'LATE' ? 'REPLANIFIÉ' : 'À RÉALISER'
     }));
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();

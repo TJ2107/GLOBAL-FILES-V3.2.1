@@ -203,8 +203,8 @@ export const TASAnalysis: React.FC<TASAnalysisProps> = ({ data, onFilterChange, 
              </div>
              <button onClick={() => downloadChartAsJpg(distributionChartRef, 'tas_distribution_closed')} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-400 transition-all shadow-sm"><Camera className="w-5 h-5" /></button>
           </div>
-          <div className="flex-1 min-w-0 relative min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={stats.distributionData} 
                 layout="vertical" 

@@ -13,14 +13,14 @@ import { BatteryTracker } from './components/BatteryTracker';
 import { BeltTracker } from './components/BeltTracker';
 import { ExportManager } from './components/ExportManager';
 import { PredictiveAI } from './components/PredictiveAI';
-import { fetchPMData } from './services/pmApiService';
+import { SettingsPanel } from './components/SettingsPanel';
 import { 
   Layout, Database, PieChart, Calendar, Timer, 
   Briefcase, Battery, Settings2, Loader2, 
   Download, Trash2, AlertTriangle, ShieldCheck, Info,
   CheckCircle2, Settings, Menu, X, ChevronRight, ClipboardList,
   ChevronLeft, PanelLeftClose, PanelLeftOpen, Fuel, ClipboardCheck, Construction,
-  Bell, Sparkles, BrainCircuit, Zap, ArrowRight, ShieldAlert, RefreshCw
+  Bell, Sparkles, BrainCircuit, Zap, ArrowRight, ShieldAlert
 } from 'lucide-react';
 
 const parseDate = (val: any): Date | null => {
@@ -46,7 +46,10 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+
+  // State for alert thresholds
+  const [batteryThreshold, setBatteryThreshold] = useState<number>(7);
+  const [beltThreshold, setBeltThreshold] = useState<number>(180);
 
   // LOGIQUE DE CENTRALISATION DES ALERTES
   const globalAlerts = useMemo(() => {
@@ -63,12 +66,16 @@ const App: React.FC = () => {
       const site = String(row["Nom du site"] || "Unknown").trim().toUpperCase();
       const date = parseDate(row["Closing date"]) || parseDate(row["Date de Clôture"]);
       const swo = String(row["N° SWO"]);
+      const swoState = String(row["State SWO"] || "").toLowerCase();
       
       if (!date) return;
 
-      if (desc.includes("batterie")) {
-        if (!batterySites[site] || date > batterySites[site].date) batterySites[site] = { date, swo };
+      if (desc.includes("remplacement batterie ge") && swoState === 'closed') {
+        if (!batterySites[site] || date > batterySites[site].date) {
+          batterySites[site] = { date, swo };
+        }
       }
+      
       if (desc.includes("courroie")) {
         if (!beltSites[site] || date > beltSites[site].date) beltSites[site] = { date, swo };
       }
@@ -77,7 +84,7 @@ const App: React.FC = () => {
     // Alertes Batteries
     Object.entries(batterySites).forEach(([site, info]) => {
       const months = (now.getFullYear() - info.date.getFullYear()) * 12 + (now.getMonth() - info.date.getMonth());
-      if (months >= 7) {
+      if (months >= batteryThreshold) {
         alerts.push({ id: `bat-${site}`, type: 'CRITICAL', category: 'Batterie', title: site, desc: `Expirée (${months} mois)`, swo: info.swo });
       }
     });
@@ -85,7 +92,7 @@ const App: React.FC = () => {
     // Alertes Courroies
     Object.entries(beltSites).forEach(([site, info]) => {
       const diffDays = Math.floor((now.getTime() - info.date.getTime()) / (1000 * 3600 * 24));
-      if (diffDays >= 180) {
+      if (diffDays >= beltThreshold) {
         alerts.push({ id: `belt-${site}`, type: 'CRITICAL', category: 'Courroie', title: site, desc: `Seuil 1000h dépassé (${diffDays}j)`, swo: info.swo });
       }
     });
@@ -124,22 +131,35 @@ const App: React.FC = () => {
     localStorage.setItem('globalFiles_data', JSON.stringify(data));
   }, [data]);
 
-  const handleDataLoaded = (newData: GlobalFileRow[], append: boolean, targetTab: string = 'dashboard') => {
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('globalFiles_settings');
+    if (savedSettings) {
+      try {
+        const { batteryThreshold, beltThreshold } = JSON.parse(savedSettings);
+        if (typeof batteryThreshold === 'number') setBatteryThreshold(batteryThreshold);
+        if (typeof beltThreshold === 'number') setBeltThreshold(beltThreshold);
+      } catch (e) { 
+        console.error("Failed to parse settings from localStorage", e); 
+      }
+    }
+  }, []);
+
+  const handleDataLoaded = (newData: GlobalFileRow[], append: boolean) => {
     if (append && data.length > 0) {
       const swoMap = new Map<string, GlobalFileRow>();
       data.forEach(row => {
-        const key = String(row["N° SWO"] || row["PM number"] || Math.random());
+        const key = String(row["N° SWO"] || Math.random());
         swoMap.set(key, row);
       });
       newData.forEach(row => {
-        const key = String(row["N° SWO"] || row["PM number"] || Math.random());
+        const key = String(row["N° SWO"] || Math.random());
         swoMap.set(key, row);
       });
       setData(Array.from(swoMap.values()));
     } else {
       setData(newData);
     }
-    setActiveTab(targetTab);
+    setActiveTab('dashboard');
     setIsSidebarOpen(false);
   };
 
@@ -151,22 +171,11 @@ const App: React.FC = () => {
     setIsNotifOpen(false);
   };
 
-  const handleSyncPM = async () => {
-    setIsSyncing(true);
-    try {
-      const apiData = await fetchPMData();
-      if (apiData.length > 0) {
-        handleDataLoaded(apiData, true, 'pm');
-        alert(`${apiData.length} PM synchronisés avec succès.`);
-      } else {
-        alert("Aucune donnée PM trouvée sur l'API.");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Erreur lors de la synchronisation des données PM.");
-    } finally {
-      setIsSyncing(false);
-    }
+  const handleSaveSettings = (newBattery: number, newBelt: number) => {
+    setBatteryThreshold(newBattery);
+    setBeltThreshold(newBelt);
+    localStorage.setItem('globalFiles_settings', JSON.stringify({ batteryThreshold: newBattery, beltThreshold: newBelt }));
+    setActiveTab('dashboard');
   };
 
   const NavButton = ({ id, label, icon: Icon, alertCount, colorClass, isNew }: { id: string, label: string, icon: any, alertCount?: number, colorClass?: string, isNew?: boolean }) => {
@@ -249,16 +258,6 @@ const App: React.FC = () => {
 
         <nav className="flex-1 overflow-y-auto px-4 space-y-2 custom-scrollbar">
           <NavButton id="upload" label="Import Excel" icon={Database} />
-          <button
-            onClick={handleSyncPM}
-            disabled={isSyncing}
-            className={`w-full group flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-4 py-4 rounded-2xl text-[11px] font-black transition-all duration-300 text-indigo-100 hover:bg-white/10 bg-indigo-700/30 border border-white/5`}
-          >
-            <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-4'}`}>
-              <RefreshCw className={`w-5 h-5 text-indigo-200 ${isSyncing ? 'animate-spin' : ''}`} />
-              {!isSidebarCollapsed && <span className="uppercase tracking-widest truncate">Sync PM API</span>}
-            </div>
-          </button>
           {data.length > 0 && (
             <>
               <div className="h-px bg-white/5 mx-4 my-4"></div>
@@ -318,7 +317,7 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-hidden relative bg-[#F8FAFC]">
           <Suspense fallback={<div className="h-full flex items-center justify-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-600" /></div>}>
-            {activeTab === 'upload' && <div className="h-full flex items-center justify-center p-6"><FileUpload existingDataCount={data.length} onDataLoaded={(d, a, t) => handleDataLoaded(d, a, t)} /></div>}
+            {activeTab === 'upload' && <div className="h-full flex items-center justify-center p-6"><FileUpload existingDataCount={data.length} onDataLoaded={handleDataLoaded} /></div>}
             {data.length > 0 && (
               <div className="h-full">
                 {activeTab === 'dashboard' && <div className="overflow-auto h-full"><Dashboard data={data} onFilterChange={(col, val) => setFilters(prev => ({ ...prev, [col]: val }))} onSwitchToData={() => setActiveTab('data')} /></div>}
@@ -341,6 +340,14 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 )}
+                {activeTab === 'settings' && 
+                  <SettingsPanel 
+                    initialBatteryThreshold={batteryThreshold}
+                    initialBeltThreshold={beltThreshold}
+                    onSave={handleSaveSettings}
+                    onCancel={() => setActiveTab('dashboard')}
+                  />
+                }
               </div>
             )}
           </Suspense>

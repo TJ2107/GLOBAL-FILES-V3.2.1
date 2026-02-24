@@ -325,8 +325,8 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
                   </div>
                </div>
             </div>
-            <div className="w-full md:w-48 h-48 shrink-0 flex flex-col items-center justify-center relative min-w-0">
-               <div className="w-full h-full min-h-[150px] relative">
+            <div className="w-full md:w-48 h-48 shrink-0 flex flex-col items-center justify-center relative">
+               <div className="w-full h-full min-h-[150px]">
                  <ResponsiveContainer width="100%" height="100%" minHeight={150}>
                     <PieChart>
                        <Pie 
@@ -422,7 +422,7 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
                   <h3 className="font-black text-gray-400 text-xs uppercase">{toDisplayDate(dateLeft)}</h3>
                   <button onClick={() => downloadChartAsJpg(chartLeftRef, 'daily_left')} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"><Camera className="w-5 h-5" /></button>
                 </div>
-                <div className="flex-1 min-h-[300px] min-w-0 relative">
+                <div className="flex-1 min-h-[300px]">
                   <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                     <BarChart data={leftData} margin={{bottom: 60}} onClick={(e) => handleChartClick(e, dateLeft)} className="cursor-pointer">
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
@@ -440,7 +440,7 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
                   <h3 className="font-black text-indigo-600 text-xs uppercase">{toDisplayDate(dateRight)}</h3>
                   <button onClick={() => downloadChartAsJpg(chartRightRef, 'daily_right')} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 transition-colors"><Camera className="w-5 h-5" /></button>
                 </div>
-                <div className="flex-1 min-h-[300px] min-w-0 relative">
+                <div className="flex-1 min-h-[300px]">
                   <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                     <BarChart data={rightData} margin={{bottom: 60}} onClick={(e) => handleChartClick(e, dateRight)} className="cursor-pointer">
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />

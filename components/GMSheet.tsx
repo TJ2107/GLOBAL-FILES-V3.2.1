@@ -255,7 +255,7 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
               <Camera className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex-1 min-h-[300px] min-w-0 relative">
+          <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <BarChart 
                 data={stats.flowData} 
@@ -287,7 +287,7 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
               <Camera className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex-1 min-h-[300px] min-w-0 relative">
+          <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <BarChart 
                 data={stats.efficiencyData} 
@@ -318,8 +318,8 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
               <Camera className="w-5 h-5" />
             </button>
           </div>
-          <div className="h-[300px] min-w-0 relative">
-            <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.pendingXData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" /> 
                 <XAxis type="number" tick={{fontSize: 10, fill: '#94a3b8'}} axisLine={false} tickLine={false} /> 
