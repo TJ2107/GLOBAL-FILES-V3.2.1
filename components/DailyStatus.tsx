@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { GlobalFileRow, XStatus } from '../types';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -43,8 +43,9 @@ const toInputDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).
 
 const toDisplayDate = (dStr: string) => {
   if (!dStr) return '-';
-  const d = new Date(dStr);
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const [y, m, d] = dStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
 export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, onSwitchToData }) => {
@@ -62,9 +63,12 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
   const chartRightRef = useRef<HTMLDivElement>(null);
 
   const reviewStats = useMemo(() => {
-    const targetDate = new Date(dateRight);
+    if (!dateRight) return { plannedTotal: 0, plannedOpen: 0, plannedClosed: 0, prodRatio: 0, yellowAlerts: [] };
+    
+    const [y, m, d] = dateRight.split('-').map(Number);
+    const targetDate = new Date(y, m - 1, d);
     targetDate.setHours(0,0,0,0);
-    const endTargetDate = new Date(dateRight);
+    const endTargetDate = new Date(y, m - 1, d);
     endTargetDate.setHours(23,59,59,999);
 
     // LOGIQUE SEMAINE : On remonte à 7 jours en arrière par rapport à la date cible
@@ -114,9 +118,10 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
 
   const getChartDataForDate = useCallback((targetDateStr: string) => {
     if (!targetDateStr) return [];
-    const targetDate = new Date(targetDateStr);
+    const [y, m, d] = targetDateStr.split('-').map(Number);
+    const targetDate = new Date(y, m - 1, d);
     targetDate.setHours(0,0,0,0);
-    const endTargetDate = new Date(targetDateStr);
+    const endTargetDate = new Date(y, m - 1, d);
     endTargetDate.setHours(23,59,59,999);
     const regionMap: Record<string, Record<string, string | number>> = {};
     data.forEach(row => {
@@ -147,9 +152,10 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
 
   const getPlannedDataForDate = useCallback((targetDateStr: string) => {
     if (!targetDateStr) return [];
-    const targetStart = new Date(targetDateStr);
+    const [y, m, d] = targetDateStr.split('-').map(Number);
+    const targetStart = new Date(y, m - 1, d);
     targetStart.setHours(0,0,0,0);
-    const targetEnd = new Date(targetDateStr);
+    const targetEnd = new Date(y, m - 1, d);
     targetEnd.setHours(23,59,59,999);
     return data.filter(row => {
         const plannedDate = parseDate(row["Date de planification"]);
@@ -163,9 +169,10 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
     const region = payload.name;
     const statusX = entry.activeTooltipIndex !== undefined ? entry.activePayload[0].dataKey : null;
 
-    const targetDate = new Date(targetDateStr);
+    const [y, m, d] = targetDateStr.split('-').map(Number);
+    const targetDate = new Date(y, m - 1, d);
     targetDate.setHours(0,0,0,0);
-    const endTargetDate = new Date(targetDateStr);
+    const endTargetDate = new Date(y, m - 1, d);
     endTargetDate.setHours(23,59,59,999);
 
     const filtered = data.filter(row => {
