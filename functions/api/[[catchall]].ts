@@ -4,7 +4,7 @@ import { GlobalFileRow } from '../../types';
 
 // Déclarez le type pour l'environnement du Worker
 export interface Env {
-  DB: D1Database;
+  DB: 0aa1af56-9d63-4cd1-aad3-f0ff68f51ac8;
 }
 
 // Fonction pour mapper les clés JSON en noms de colonnes SQL
@@ -74,13 +74,31 @@ const mapJsonToDb = (row: GlobalFileRow): Record<string, any> => ({
 
 const router = Router();
 
+// Middleware pour gérer les requêtes CORS
+const withCors = (request: IRequest) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*', // Pour le développement, '*' est acceptable.
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers });
+  }
+  // Pour les autres requêtes, nous attacherons les en-têtes plus tard
+};
+
+router.all('*', withCors);
+
 // GET /api/data - Récupérer toutes les données
 router.get('/api/data', async (request: IRequest, env: Env) => {
   try {
     const { results } = await env.DB.prepare('SELECT * FROM swo_data').all();
-    return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
+    const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+    return new Response(JSON.stringify(results), { headers });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers });
   }
 });
 
@@ -103,10 +121,11 @@ router.post('/api/data', async (request: IRequest, env: Env) => {
     });
     
     await env.DB.batch(batch);
-
-    return new Response(JSON.stringify({ success: true, count: data.length }), { status: 201 });
+    const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+    return new Response(JSON.stringify({ success: true, count: data.length }), { status: 201, headers });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+    const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+    return new Response(JSON.stringify({ error: e.message }), { status: 400, headers });
   }
 });
 
@@ -114,9 +133,11 @@ router.post('/api/data', async (request: IRequest, env: Env) => {
 router.delete('/api/data', async (request: IRequest, env: Env) => {
     try {
         await env.DB.prepare('DELETE FROM swo_data').run();
-        return new Response(JSON.stringify({ success: true, message: 'Toutes les données ont été purgées.' }), { status: 200 });
+        const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+        return new Response(JSON.stringify({ success: true, message: 'Toutes les données ont été purgées.' }), { status: 200, headers });
     } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers });
     }
 });
 
