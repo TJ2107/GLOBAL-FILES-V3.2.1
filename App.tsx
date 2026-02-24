@@ -144,8 +144,14 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleDataLoaded = async (newData: GlobalFileRow[]) => {
+  const handleDataLoaded = async (newData: GlobalFileRow[], append: boolean) => {
     try {
+      if (!append) {
+        // If not appending (i.e., replacing), clear existing data first
+        const deleteResponse = await fetch('/api/data', { method: 'DELETE' });
+        if (!deleteResponse.ok) throw new Error('Failed to clear existing data');
+      }
+
       const response = await fetch('/api/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
