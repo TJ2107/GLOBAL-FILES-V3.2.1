@@ -1,14 +1,14 @@
 
 import React, { useMemo, useRef, useState } from 'react';
-import { GlobalFileRow, XStatus } from '../types';
+import { GlobalFileRow } from '../types';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   Cell 
 } from 'recharts';
 import { 
   Briefcase, Camera, Calendar, 
-  RefreshCw, X, ListFilter, Activity, CheckCircle2, History, Layers, Timer,
-  AlertCircle, ArrowRight, Globe, Tag, RotateCcw, MapPin, Eye, LayoutList, CheckSquare,
+  X, ListFilter, Activity, CheckCircle2, History, Layers, Timer,
+  ArrowRight, Globe, Tag, MapPin, LayoutList, CheckSquare,
   FilePlus
 } from 'lucide-react';
 import { downloadChartAsJpg } from '../utils/chartHelpers';
@@ -31,14 +31,9 @@ const COLORS = {
   htc: '#f97316'
 };
 
-const PENDING_X_COLORS: Record<string, string> = {
-  "STHIC TRAVAUX EN COURS": COLORS.tvx,
-  "STHIC SPA": COLORS.spa,
-  "STHIC ATTENTE VALIDATION HTC": COLORS.atv,
-  "HTC DIVERS": COLORS.htc
-};
 
-const parseDate = (val: any): Date | null => {
+
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -79,7 +74,7 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
     let backlogResolvedInPeriod = 0; // Créés AVANT et Clos PENDANT
     let remainingFromPeriod = 0;     // Créés PENDANT et NON CLOS à la fin
     
-    let statusXCounts = { "STHIC TRAVAUX EN COURS": 0, "STHIC SPA": 0, "STHIC ATTENTE VALIDATION HTC": 0, "HTC DIVERS": 0 };
+    const statusXCounts: Record<string, number> = { "STHIC TRAVAUX EN COURS": 0, "STHIC SPA": 0, "STHIC ATTENTE VALIDATION HTC": 0, "HTC DIVERS": 0 };
     const regionStockMap: Record<string, number> = {};
     
     const startDate = period.start ? new Date(period.start) : null;
@@ -143,13 +138,13 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
         { name: 'Backlog Résolu', value: backlogResolvedInPeriod, fill: COLORS.backlog }, 
         { name: 'Stock Restant Période', value: remainingFromPeriod, fill: COLORS.pending }
       ], 
-      pendingXData: Object.entries(statusXCounts).filter(([_, val]) => val > 0).map(([key, val]) => ({ name: key, value: val })), 
+      pendingXData: Object.entries(statusXCounts).filter(([, val]) => val > 0).map(([key, val]) => ({ name: key, value: val })), 
       totals: { totalCreatedInPeriod, totalClosedInPeriod, createdAndClosedInPeriod, backlogResolvedInPeriod, remainingFromPeriod },
       regionStats
     };
   }, [data, period]);
 
-  const KPICard = ({ title, value, icon: Icon, colorClass, subtitle }: any) => (
+  const KPICard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string; value: string | number; icon: React.ElementType; colorClass: string; subtitle?: string; }) => (
     <div className={`relative bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden group hover:shadow-xl transition-all duration-500`}>
       <div className="relative z-10">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
@@ -165,7 +160,7 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
     </div>
   );
 
-  const handleDrillDown = (entry: any, chartType: string) => {
+  const handleDrillDown = (entry: { name: string }, chartType: string) => {
     if (!entry) return;
     const { name } = entry;
     const startDate = period.start ? new Date(period.start) : null;
@@ -259,7 +254,7 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <BarChart 
                 data={stats.flowData} 
-                onClick={(data: any) => data?.activePayload && handleDrillDown(data.activePayload[0].payload, 'FLOW')}
+                onClick={(data) => data?.activePayload && handleDrillDown(data.activePayload[0].payload, 'FLOW')}
                 className="cursor-pointer"
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" /> 
@@ -291,7 +286,7 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
             <ResponsiveContainer width="100%" height="100%" minHeight={300}>
               <BarChart 
                 data={stats.efficiencyData} 
-                onClick={(data: any) => data?.activePayload && handleDrillDown(data.activePayload[0].payload, 'EFFICIENCY')}
+                onClick={(data) => data?.activePayload && handleDrillDown(data.activePayload[0].payload, 'EFFICIENCY')}
                 className="cursor-pointer"
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" /> 

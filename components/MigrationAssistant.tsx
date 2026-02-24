@@ -24,17 +24,25 @@ export const MigrationAssistant: React.FC<MigrationAssistantProps> = ({ onMigrat
     }
   }, []);
 
+  const [progress, setProgress] = useState(0);
+
   const handleMigration = async () => {
     setStatus('migrating');
     try {
-      const response = await fetch('/api/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(localData),
-      });
+      const chunkSize = 500;
+      for (let i = 0; i < localData.length; i += chunkSize) {
+        const chunk = localData.slice(i, i + chunkSize);
+        const response = await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chunk),
+        });
 
-      if (!response.ok) {
-        throw new Error('Migration request failed');
+        if (!response.ok) {
+          throw new Error(`Migration request failed at chunk ${i}`);
+        }
+        
+        setProgress(Math.min(100, Math.round(((i + chunk.length) / localData.length) * 100)));
       }
 
       setStatus('success');
@@ -71,9 +79,17 @@ export const MigrationAssistant: React.FC<MigrationAssistantProps> = ({ onMigrat
         )}
 
         {status === 'migrating' && (
-          <div className="w-full px-8 py-4 bg-slate-100 text-slate-600 font-bold rounded-xl flex items-center justify-center gap-3">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <span>Migration en cours...</span>
+          <div className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-4">
+            <div className="flex items-center gap-3 text-indigo-600 font-black">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Migration en cours... {progress}%</span>
+            </div>
+            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-indigo-600 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
         )}
 

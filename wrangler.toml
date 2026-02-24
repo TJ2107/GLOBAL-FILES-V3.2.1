@@ -5,14 +5,11 @@ compatibility_date = "2024-03-20"
 [[d1_databases]]
 binding = "DB"
 database_name = "global-files-db"
-database_id = "<0aa1af56-9d63-4cd1-aad3-f0ff68f51ac8>"
-
-[build]
-command = "npm run build"
+database_id = "0aa1af56-9d63-4cd1-aad3-f0ff68f51ac8"
 
 [env.preview]
-
-[[d1_databases]]
-binding = "DB"
-database_name = "global-files-db-preview"
-database_id = "<0aa1af56-9d63-4cd1-aad3-f0ff68f51ac8>"
+# Commenté pour éviter l'erreur de double binding
+# [[env.preview.d1_databases]]
+# binding = "DB"
+# database_name = "global-files-db-preview"
+# database_id = "0aa1af56-9d63-4cd1-aad3-f0ff68f51ac8"

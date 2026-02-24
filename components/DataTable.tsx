@@ -1,7 +1,7 @@
 
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { GlobalFileRow, XStatus } from '../types';
-import { COLUMNS, getRowColorClass, SWO_OPTIONS, X_OPTIONS, getXPriorityLevel, normalizeXValue } from '../constants';
+import { COLUMNS, getRowColorClass, SWO_OPTIONS, X_OPTIONS, getXPriorityLevel } from '../constants';
 import { Search, Columns, CalendarRange, XCircle, MoreVertical, Trash2, Copy, ClipboardPaste, Palette, ArrowUpDown, Table, Bookmark, Save, Trash, FilterX } from 'lucide-react';
 
 interface SavedView {
@@ -49,7 +49,7 @@ const COLOR_OPTIONS = [
   { label: 'Blanc (Autres)', value: 'WHITE', color: 'bg-white border' },
 ];
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -66,7 +66,7 @@ const parseDate = (val: any): Date | null => {
   return null;
 };
 
-const formatDateTime = (val: any): string => {
+const formatDateTime = (val: string | number | Date | null | undefined): string => {
   const d = parseDate(val);
   if (!d) return typeof val === 'string' ? val : '';
   return d.toLocaleString('fr-FR', {
@@ -80,7 +80,9 @@ export const DataTable: React.FC<DataTableProps> = ({ data, setData, onUpdateRow
     try {
       const saved = localStorage.getItem('globalFiles_visibleColumns');
       if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    } catch {
+      // Gérer l'erreur si nécessaire, par exemple en loggant
+    }
     return {};
   });
 
@@ -103,7 +105,10 @@ export const DataTable: React.FC<DataTableProps> = ({ data, setData, onUpdateRow
     try {
       const saved = localStorage.getItem('globalFiles_savedViews');
       return saved ? JSON.parse(saved) : [];
-    } catch (e) { return []; }
+    } catch {
+      // Gérer l'erreur si nécessaire, par exemple en loggant
+      return [];
+    }
   });
   const [isViewsMenuOpen, setIsViewsMenuOpen] = useState(false);
   const viewsMenuRef = useRef<HTMLDivElement>(null);
@@ -124,7 +129,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, setData, onUpdateRow
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [columnMenuRef, dateFilterRef, colActionRef, rowActionRef, colorMenuRef, viewsMenuRef]);
 
   const toggleColumn = (column: string) => {
     setVisibleColumns(prev => {
@@ -201,6 +206,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, setData, onUpdateRow
         }
       }
     } catch (err) {
+      console.error('Failed to read clipboard contents: ', err);
       alert("Impossible de lire le presse-papier. Vérifiez les permissions.");
     }
     setActiveColAction(null);
@@ -244,7 +250,7 @@ export const DataTable: React.FC<DataTableProps> = ({ data, setData, onUpdateRow
         if (!val) return true;
         
         if (val.startsWith('DATE_RANGE|')) {
-          const [_, startStr, endStr] = val.split('|');
+          const [, startStr, endStr] = val.split('|');
           const rowDate = parseDate(row[key]);
           if (!rowDate) return false;
           rowDate.setHours(0, 0, 0, 0);

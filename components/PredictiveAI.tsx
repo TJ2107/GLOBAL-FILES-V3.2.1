@@ -5,10 +5,10 @@ import { GlobalFileRow } from '../types';
 import { jsPDF } from 'jspdf';
 import { 
   BrainCircuit, Loader2, Zap, ShieldCheck, FileDown, FileText,
-  Target, Globe, Activity, ShieldIcon, Hash, BarChart3,
-  Search, ShieldAlert, Cpu, ClipboardCheck, ArrowUpRight,
-  Stamp, Lock, Layers, MapPin, CheckCircle2, ArrowRight,
-  FileWarning, AlertCircle
+  Target, Globe, Activity, ShieldIcon, Hash, 
+  Cpu, ArrowUpRight,
+  Lock, Layers, MapPin, CheckCircle2, 
+  FileWarning
 } from 'lucide-react';
 
 interface PredictiveAIProps {
@@ -27,12 +27,12 @@ export const PredictiveAI: React.FC<PredictiveAIProps> = ({ data }) => {
   });
 
   const statsForAI = useMemo(() => {
-    const summary: Record<string, any> = {
+    const summary: Record<string, number | string[] | Record<string, number> | { site: string; region: string; task: string; status: string; prio: string | number; creation: string | number | Date; }[]> = {
       total_sites: new Set(data.map(d => d["Nom du site"])).size,
       total_swo: data.length,
       regions_active: Array.from(new Set(data.map(d => d["Region"] || "Inconnue"))),
       cm_delays: data.filter(d => String(d["X"]).includes("HTC") || String(d["X"]).includes("SPA")).length,
-      status_distribution: data.reduce((acc: any, row) => {
+      status_distribution: data.reduce((acc: Record<string, number>, row) => {
         const x = String(row["X"] || "Autre");
         acc[x] = (acc[x] || 0) + 1;
         return acc;
@@ -41,10 +41,10 @@ export const PredictiveAI: React.FC<PredictiveAIProps> = ({ data }) => {
         .filter(d => String(d["Priorité"]).includes("0") || String(d["X"]).includes("HTC"))
         .slice(0, 100)
         .map(d => ({ 
-          site: d["Nom du site"], 
+          site: d["Nom du site"],
           region: d["Region"],
           task: d["Description"], 
-          status: d["X"],
+          status: String(d["X"]),
           prio: d["Priorité"],
           creation: d["Date de création du SWO"]
         }))

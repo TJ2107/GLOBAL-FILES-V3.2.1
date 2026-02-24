@@ -18,6 +18,8 @@ interface DashboardProps {
   onSwitchToData: () => void;
 }
 
+
+
 const X_COLORS: Record<string, string> = {
   [XStatus.CLOSED]: "#10B981",
   [XStatus.TVX_STHIC]: "#6366f1", 
@@ -27,7 +29,7 @@ const X_COLORS: Record<string, string> = {
   "Autre": "#94A3B8"
 };
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -69,7 +71,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
   });
   const [dateB, setDateB] = useState(toInputDate(new Date()));
 
-  const handleChartClick = (entry: any, column: string) => {
+  const handleChartClick = (entry: { name: string }, column: string) => {
      const name = entry?.name || entry?.activePayload?.[0]?.payload?.region || entry?.activePayload?.[0]?.payload?.name;
      if (name) {
        onFilterChange(column, name);
@@ -95,7 +97,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
       countsByX["Autre"] = 0;
       regionData.forEach(row => {
         const xVal = row["X"];
-        if (xVal && X_OPTIONS.includes(xVal as any)) countsByX[String(xVal)] = (countsByX[String(xVal)] || 0) + 1;
+        if (xVal && X_OPTIONS.includes(xVal as XStatus)) countsByX[String(xVal)] = (countsByX[String(xVal)] || 0) + 1;
         else countsByX["Autre"] = (countsByX["Autre"] || 0) + 1;
       });
       return { region, ...countsByX, total: regionData.length };
@@ -127,7 +129,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
     return { total: values.length, red, orange, green, percentHealthy };
   }, [data]);
 
-  const KPICard = ({ title, value, icon: Icon, colorClass, subtitle }: any) => (
+  const KPICard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string; value: string | number; icon: React.ElementType; colorClass: string; subtitle?: string }) => (
     <div className={`relative bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden group hover:shadow-xl transition-all duration-500`}>
       <div className="relative z-10">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
@@ -149,14 +151,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
       targetDate.setHours(0, 0, 0, 0);
       const endOfDay = new Date(dateStr);
       endOfDay.setHours(23, 59, 59, 999);
-      const regionMap: Record<string, any> = {};
+      const regionMap: Record<string, Record<string, number>> = {};
       data.forEach(row => {
         const creationDate = parseDate(row["Date de création du SWO"]);
         const closingDate = parseDate(row["Closing date"]) || parseDate(row["Date de Clôture"]);
         const reg = String(row["Region"] || "Non défini");
         const xVal = String(row["X"] || "Autre");
         if (!regionMap[reg]) {
-          regionMap[reg] = { total: 0 };
+          regionMap[reg] = { total: 0 } as Record<string, number>;
           X_OPTIONS.forEach(opt => regionMap[reg][opt] = 0);
         }
         if (xVal === XStatus.CLOSED) {
@@ -167,7 +169,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
         } 
         else {
           if (creationDate && creationDate >= targetDate && creationDate <= endOfDay) {
-            if (X_OPTIONS.includes(xVal as any)) regionMap[reg][xVal]++;
+            if (X_OPTIONS.includes(xVal as XStatus)) regionMap[reg][xVal]++;
             regionMap[reg].total++;
           }
         }
@@ -193,8 +195,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
       sums.dataA.total += row.dataA.total;
       sums.dataB.total += row.dataB.total;
       X_OPTIONS.forEach(opt => {
-        (sums.dataA as any)[opt] += (row.dataA as any)[opt];
-        (sums.dataB as any)[opt] += (row.dataB as any)[opt];
+        (sums.dataA as Record<string, number>)[opt] += (row.dataA as Record<string, number>)[opt];
+        (sums.dataB as Record<string, number>)[opt] += (row.dataB as Record<string, number>)[opt];
       });
     });
     return sums;
@@ -393,8 +395,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
                 <tr key={row.region} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'} hover:bg-indigo-50/30 transition-colors`}>
                   <td className="px-6 py-4 border-r font-black text-slate-700 sticky left-0 bg-inherit z-10 uppercase tracking-tight">{row.region}</td>
                   {X_OPTIONS.map(opt => {
-                    const valA = (row.dataA as any)[opt] || 0;
-                    const valB = (row.dataB as any)[opt] || 0;
+                    const valA = (row.dataA as Record<string, number>)[opt] || 0;
+                    const valB = (row.dataB as Record<string, number>)[opt] || 0;
                     return (
                       <React.Fragment key={`${row.region}-${opt}`}>
                         <td className="px-2 py-4 border-r text-center text-slate-300">{valA || '-'}</td>
@@ -420,8 +422,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onFilterChange, onSw
                 <tr className="bg-slate-900 text-white font-black text-xs uppercase tracking-widest">
                   <td className="px-6 py-6 border-r border-slate-800 sticky left-0 bg-slate-900 z-10 text-right">TOTAL CONSOLIDÉ</td>
                   {X_OPTIONS.map(opt => {
-                    const sumA = (totalsCompare.dataA as any)[opt];
-                    const sumB = (totalsCompare.dataB as any)[opt];
+                    const sumA = (totalsCompare.dataA as Record<string, number>)[opt];
+                    const sumB = (totalsCompare.dataB as Record<string, number>)[opt];
                     return (
                       <React.Fragment key={`total-${opt}`}>
                         <td className="px-2 py-6 border-r border-slate-800 text-center opacity-40">{sumA}</td>

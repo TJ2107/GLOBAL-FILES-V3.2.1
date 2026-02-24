@@ -2,9 +2,9 @@
 import React, { useMemo, useState } from 'react';
 import { GlobalFileRow } from '../types';
 import { 
-  ClipboardCheck, MapPin, Search, Filter, 
+  MapPin, Search, 
   CheckCircle2, AlertTriangle, Clock, ListFilter, 
-  Download, Activity, User, Settings2, Info, CalendarDays,
+  Download, Activity, User, CalendarDays,
   ChevronLeft, ChevronRight, Target, Hash
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -15,7 +15,7 @@ interface PMTrackerProps {
   onSwitchToData: () => void;
 }
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -31,7 +31,7 @@ const parseDate = (val: any): Date | null => {
   return null;
 };
 
-const formatDateDisplay = (val: any): string => {
+const formatDateDisplay = (val: string | number | Date | null | undefined): string => {
   const d = parseDate(val);
   if (!d) return typeof val === 'string' ? val : '-';
   return d.toLocaleDateString('fr-FR', {
@@ -160,7 +160,7 @@ export const PMTracker: React.FC<PMTrackerProps> = ({ data, onFilterChange, onSw
     XLSX.writeFile(wb, `JOURNAL_PM_${selectedDate}.xlsx`);
   };
 
-  const KPICard = ({ title, value, icon: Icon, colorClass, bgColor }: any) => (
+  const KPICard = ({ title, value, icon: Icon, colorClass, bgColor }: { title: string; value: string | number; icon: React.ElementType; colorClass: string; bgColor: string; }) => (
     <div className={`${bgColor} p-8 rounded-[3rem] shadow-sm border border-white flex flex-col justify-between relative overflow-hidden group hover:shadow-xl transition-all duration-500 min-h-[180px]`}>
       <div className="relative z-10">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">{title}</p>

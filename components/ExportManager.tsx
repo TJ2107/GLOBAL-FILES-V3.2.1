@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { Download, FileSpreadsheet, Filter, CheckCircle, Loader2, ArrowRight } from 'lucide-react';
+import { Download, FileSpreadsheet, Filter, CheckCircle, Loader2 } from 'lucide-react';
 import { GlobalFileRow } from '../types';
 import { COLUMNS } from '../constants';
 
@@ -24,7 +24,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({ allData, filteredD
         
         // Préparation des données pour s'assurer que l'ordre des colonnes est respecté
         const exportData = data.map(row => {
-          const orderedRow: any = {};
+          const orderedRow: { [key: string]: string | number | boolean | null | undefined } = {};
           COLUMNS.forEach(col => {
             orderedRow[col] = row[col] ?? "";
           });

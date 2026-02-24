@@ -38,7 +38,7 @@ const getPriorityStyle = (priority: string) => {
   return 'bg-gray-500 text-white border-gray-600';
 };
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -137,13 +137,13 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
     };
   }, [data, dateRight]);
 
-  const getChartDataForDate = (targetDateStr: string) => {
+  const getChartDataForDate = useCallback((targetDateStr: string) => {
     if (!targetDateStr) return [];
     const targetDate = new Date(targetDateStr);
     targetDate.setHours(0,0,0,0);
     const endTargetDate = new Date(targetDateStr);
     endTargetDate.setHours(23,59,59,999);
-    const regionMap: Record<string, any> = {};
+    const regionMap: Record<string, Record<string, string | number>> = {};
     data.forEach(row => {
       const creationDate = parseDate(row["Date de création du SWO"]);
       const closingDate = parseDate(row["Closing date"]) || parseDate(row["Date de Clôture"]);
@@ -159,15 +159,18 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
            X_KEYS.forEach(k => regionMap[region][k] = 0);
            regionMap[region]["Autre"] = 0;
          }
-         if (X_KEYS.includes(xStatus as any)) regionMap[region][xStatus]++;
-         else regionMap[region]["Autre"]++;
-         regionMap[region].total++;
+         if (X_KEYS.includes(xStatus as XStatus)) {
+            regionMap[region][xStatus] = (regionMap[region][xStatus] as number) + 1;
+          } else {
+            regionMap[region]['Autre'] = (regionMap[region]['Autre'] as number) + 1;
+          }
+          regionMap[region].total = (regionMap[region].total as number) + 1;
       }
     });
-    return Object.values(regionMap).sort((a: any, b: any) => b.total - a.total);
-  };
+    return Object.values(regionMap).sort((a, b) => (b.total as number) - (a.total as number));
+  }, [data]);
 
-  const getPlannedDataForDate = (targetDateStr: string) => {
+  const getPlannedDataForDate = useCallback((targetDateStr: string) => {
     if (!targetDateStr) return [];
     const targetStart = new Date(targetDateStr);
     targetStart.setHours(0,0,0,0);
@@ -177,9 +180,9 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
         const plannedDate = parseDate(row["Date de planification"]);
         return plannedDate && plannedDate >= targetStart && plannedDate <= targetEnd;
     });
-  };
+  }, [data]);
 
-  const handleChartClick = (entry: any, targetDateStr: string) => {
+  const handleChartClick = (entry: { activePayload?: { payload: { name: string }; dataKey: string }[], activeTooltipIndex?: number }, targetDateStr: string) => {
     if (!entry || !entry.activePayload) return;
     const payload = entry.activePayload[0].payload;
     const region = payload.name;
@@ -196,7 +199,7 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
       const rowRegion = String(row["Region"] || "Non défini");
       const rowStatus = String(row["X"] || "Autre");
       if (rowRegion !== region) return false;
-      if (statusX && rowStatus !== statusX && (statusX !== "Autre" || X_KEYS.includes(rowStatus as any))) return false;
+      if (statusX && rowStatus !== statusX && (statusX !== "Autre" || X_KEYS.includes(rowStatus as XStatus))) return false;
       const isCreated = creationDate && creationDate >= targetDate && creationDate <= endTargetDate;
       const isClosed = closingDate && closingDate >= targetDate && closingDate <= endTargetDate;
       return isCreated || isClosed;
@@ -205,10 +208,10 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
     setDrillDownTitle(`Production : ${region} ${statusX ? `- ${statusX}` : ''} (${toDisplayDate(targetDateStr)})`);
   };
 
-  const leftData = useMemo(() => getChartDataForDate(dateLeft), [data, dateLeft]);
-  const rightData = useMemo(() => getChartDataForDate(dateRight), [data, dateRight]);
-  const leftPlannedData = useMemo(() => getPlannedDataForDate(dateLeft), [data, dateLeft]);
-  const rightPlannedData = useMemo(() => getPlannedDataForDate(dateRight), [data, dateRight]);
+  const leftData = useMemo(() => getChartDataForDate(dateLeft), [dateLeft, getChartDataForDate]);
+  const rightData = useMemo(() => getChartDataForDate(dateRight), [dateRight, getChartDataForDate]);
+  const leftPlannedData = useMemo(() => getPlannedDataForDate(dateLeft), [dateLeft, getPlannedDataForDate]);
+  const rightPlannedData = useMemo(() => getPlannedDataForDate(dateRight), [dateRight, getPlannedDataForDate]);
 
   const handleInspectRow = (row: GlobalFileRow) => {
     onFilterChange("N° SWO", String(row["N° SWO"]));
@@ -529,7 +532,7 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
   );
 };
 
-function formatDate(date: any): string {
+function formatDate(date: string | number | Date | null | undefined): string {
   const d = parseDate(date);
   if (!d) return "-";
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });

@@ -18,13 +18,13 @@ import { MigrationAssistant } from './components/MigrationAssistant';
 import { 
   Layout, Database, PieChart, Calendar, Timer, 
   Briefcase, Battery, Settings2, Loader2, 
-  Download, Trash2, AlertTriangle, ShieldCheck, Info,
+  Download, Trash2, AlertTriangle,
   CheckCircle2, Settings, Menu, X, ChevronRight, ClipboardList,
-  ChevronLeft, PanelLeftClose, PanelLeftOpen, Fuel, ClipboardCheck, Construction,
-  Bell, Sparkles, BrainCircuit, Zap, ArrowRight, ShieldAlert
+  PanelLeftClose, PanelLeftOpen, ClipboardCheck,
+  Bell, BrainCircuit, ArrowRight, ShieldAlert
 } from 'lucide-react';
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -100,7 +100,7 @@ const App: React.FC = () => {
     });
 
     return alerts;
-  }, [data]);
+  }, [data, batteryThreshold, beltThreshold]);
 
   const filteredData = useMemo(() => {
     return data.filter(row => {
@@ -158,7 +158,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleDataLoaded = async (newData: GlobalFileRow[], append: boolean) => {
+  const handleDataLoaded = async (newData: GlobalFileRow[]) => {
     try {
       const response = await fetch('/api/data', {
         method: 'POST',
@@ -195,7 +195,7 @@ const App: React.FC = () => {
     setActiveTab('dashboard');
   };
 
-  const NavButton = ({ id, label, icon: Icon, alertCount, colorClass, isNew }: { id: string, label: string, icon: any, alertCount?: number, colorClass?: string, isNew?: boolean }) => {
+  const NavButton = ({ id, label, icon: Icon, colorClass, isNew }: { id: string, label: string, icon: React.ElementType, colorClass?: string, isNew?: boolean }) => {
     const isActive = activeTab === id;
     return (
       <button

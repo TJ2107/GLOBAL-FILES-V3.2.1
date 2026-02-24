@@ -5,9 +5,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { 
-  ClipboardList, Activity, Calendar, Filter, Camera, 
-  RotateCcw, MapPin, Eye, Hash, Tag, Layers, ListFilter, X, CheckCircle2,
-  User, Search, FileText, ChevronRight, Globe, Clock, ArrowRight
+  ClipboardList, Activity, Calendar, Camera, 
+  MapPin, Hash, Tag, Layers, ListFilter, CheckCircle2,
+  User, Search, ChevronRight, Globe, ArrowRight
 } from 'lucide-react';
 import { downloadChartAsJpg } from '../utils/chartHelpers';
 
@@ -22,7 +22,7 @@ const COLORS = [
   '#ec4899', '#06b6d4', '#f97316', '#64748b'
 ];
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -43,7 +43,7 @@ const parseDate = (val: any): Date | null => {
   return null;
 };
 
-const formatDate = (date: any): string => {
+const formatDate = (date: string | number | Date | null | undefined): string => {
   const d = parseDate(date);
   if (!d) return "-";
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -59,8 +59,7 @@ export const TASAnalysis: React.FC<TASAnalysisProps> = ({ data, onFilterChange, 
   });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [drillDownData, setDrillDownData] = useState<GlobalFileRow[] | null>(null);
-  const [drillDownTitle, setDrillDownTitle] = useState("");
+  
 
   const distributionChartRef = useRef<HTMLDivElement>(null);
 
@@ -208,7 +207,7 @@ export const TASAnalysis: React.FC<TASAnalysisProps> = ({ data, onFilterChange, 
               <BarChart 
                 data={stats.distributionData} 
                 layout="vertical" 
-                onClick={(d: any) => d?.activePayload && handleJumpToData('TAS Status', d.activePayload[0].payload.name)}
+                onClick={(d) => d?.activePayload && handleJumpToData('TAS Status', d.activePayload[0].payload.name)}
                 className="cursor-pointer"
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />

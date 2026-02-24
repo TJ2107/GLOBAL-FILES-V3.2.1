@@ -29,7 +29,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onDataLoaded, existingDa
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         
-        const rawData = XLSX.utils.sheet_to_json(sheet) as any[];
+        const rawData = XLSX.utils.sheet_to_json(sheet) as GlobalFileRow[];
         const sanitizedData = rawData.map(row => normalizeRow(row));
         
         if (existingDataCount > 0) {

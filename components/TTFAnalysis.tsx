@@ -3,12 +3,12 @@ import React, { useMemo, useState, useRef } from 'react';
 import { GlobalFileRow } from '../types';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-  ComposedChart, Line, Area 
+  ComposedChart, Line 
 } from 'recharts';
 import { 
-  Clock, CheckCircle, AlertTriangle, Timer, Filter, Calendar, X, RotateCcw, 
-  CheckSquare, TrendingUp, List, XCircle, Camera, Eye, MapPin, AlertCircle,
-  Zap, ShieldCheck, Activity, Target, ArrowRight, Hash, Download
+  CheckCircle, AlertTriangle, Timer, Filter, Calendar, RotateCcw, 
+  Camera, Eye, MapPin, AlertCircle,
+  ShieldCheck, Activity, Target, ArrowRight, Hash, Download
 } from 'lucide-react';
 import { downloadChartAsJpg } from '../utils/chartHelpers';
 import * as XLSX from 'xlsx';
@@ -36,7 +36,7 @@ const COLORS = {
   indigo: '#4f46e5'
 };
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -53,7 +53,7 @@ const parseDate = (val: any): Date | null => {
   return null;
 };
 
-const formatDate = (date: any): string => {
+const formatDate = (date: string | number | Date | null | undefined): string => {
   const d = parseDate(date);
   if (!d) return "-";
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -82,22 +82,29 @@ export const TTFAnalysis: React.FC<TTFAnalysisProps> = ({ data, onFilterChange, 
     );
   };
 
-  const isRowVisible = (row: GlobalFileRow, priorityKey: string, endDate: Date | null) => {
-      if (!selectedPriorities.includes(priorityKey)) return false;
-      if (closingDateFilter.start || closingDateFilter.end) {
-        if (!endDate) return false;
-        const checkClosing = new Date(endDate);
-        checkClosing.setHours(0,0,0,0);
-        if (closingDateFilter.start && checkClosing < new Date(closingDateFilter.start)) return false;
-        if (closingDateFilter.end && checkClosing > new Date(closingDateFilter.end)) return false;
-      }
-      return true;
-  };
-
   const analysis = useMemo(() => {
+    const isRowVisible = (row: GlobalFileRow, priorityKey: string, endDate: Date | null) => {
+        if (!selectedPriorities.includes(priorityKey)) return false;
+        if (closingDateFilter.start || closingDateFilter.end) {
+          if (!endDate) return false;
+          const checkClosing = new Date(endDate);
+          checkClosing.setHours(0,0,0,0);
+          if (closingDateFilter.start && checkClosing < new Date(closingDateFilter.start)) return false;
+          if (closingDateFilter.end && checkClosing > new Date(closingDateFilter.end)) return false;
+        }
+        return true;
+    };
+
     const statsByPriority: Record<string, { priority: string, met: number, missed: number, totalDuration: number, count: number, target: number }> = {};
     const statsByMonth: Map<string, { dateObj: number, total: number, met: number, duration: number }> = new Map();
-    const allOverdueItems: any[] = [];
+    const allOverdueItems: (GlobalFileRow & { 
+      creationDateStr: string; 
+      closingDateStr: string; 
+      duration: number; 
+      target: number; 
+      excess: number; 
+      priority: string; 
+    })[] = [];
     
     let totalAnalyzed = 0;
     let totalMet = 0;
@@ -181,7 +188,7 @@ export const TTFAnalysis: React.FC<TTFAnalysisProps> = ({ data, onFilterChange, 
     };
   }, [data, selectedPriorities, closingDateFilter]);
 
-  const KPICard = ({ title, value, icon: Icon, colorClass, subtitle }: any) => (
+  const KPICard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string; value: string | number; icon: React.ElementType; colorClass: string; subtitle?: string; }) => (
     <div className={`relative bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden group hover:shadow-xl transition-all duration-500`}>
       <div className="relative z-10">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
@@ -197,7 +204,7 @@ export const TTFAnalysis: React.FC<TTFAnalysisProps> = ({ data, onFilterChange, 
     </div>
   );
 
-  const handleInspect = (row: any) => {
+  const handleInspect = (row: GlobalFileRow) => {
     if (onFilterChange && onSwitchToData) {
       onFilterChange("N° SWO", String(row["N° SWO"]));
       onSwitchToData();

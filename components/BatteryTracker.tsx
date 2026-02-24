@@ -2,9 +2,9 @@
 import React, { useMemo, useState } from 'react';
 import { GlobalFileRow } from '../types';
 import { 
-  Battery as BatteryIcon, AlertCircle, CheckCircle2, Search, Filter, Calendar, MapPin, 
-  History, Download, CalendarCheck, X, RotateCcw, Activity, ShieldAlert,
-  Zap, Clock, ArrowRight, Info
+  Battery as BatteryIcon, Search, Filter, Calendar, MapPin, 
+  Download, CalendarCheck, RotateCcw, Activity, ShieldAlert,
+  Zap, Clock, Info
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -26,7 +26,7 @@ interface SiteBatteryStatus {
 const EXPIRATION_THRESHOLD_MONTHS = 7;
 const WARNING_THRESHOLD_MONTHS = 6;
 
-const parseDate = (val: any): Date | null => {
+const parseDate = (val: string | number | Date | null | undefined): Date | null => {
   if (!val) return null;
   if (val instanceof Date) return val;
   if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
@@ -272,7 +272,7 @@ export const BatteryTracker: React.FC<BatteryTrackerProps> = ({ data }) => {
               {['ALL', 'RED', 'ORANGE', 'GREEN'].map((s) => (
                 <button 
                   key={s} 
-                  onClick={() => setFilterStatus(s as any)}
+                  onClick={() => setFilterStatus(s as 'ALL' | 'RED' | 'ORANGE' | 'GREEN')}
                   className={`px-6 py-2.5 rounded-2xl text-[10px] font-black transition-all ${filterStatus === s ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 >
                   {s === 'ALL' ? 'TOUT' : s === 'RED' ? 'EXPIRÉ' : s === 'ORANGE' ? 'ALERTE' : 'OK'}

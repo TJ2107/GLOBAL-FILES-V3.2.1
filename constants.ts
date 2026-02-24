@@ -64,13 +64,7 @@ export const COLUMNS = [
   "Comment"
 ];
 
-export const X_OPTIONS = [
-  XStatus.CLOSED,
-  XStatus.TVX_STHIC,
-  XStatus.STHIC_SPA,
-  XStatus.STHIC_ATV_HTC,
-  XStatus.HTC
-];
+export const X_OPTIONS = Object.values(XStatus);
 
 export const SWO_OPTIONS = [
   SWOState.CLOSED,
@@ -91,12 +85,12 @@ export const REGION_COORDINATES: Record<string, [number, number]> = {
   "LIKOUALA": [2.5, 17.5]
 };
 
-export const normalizeXValue = (val: any): string => {
+export const normalizeXValue = (val: string | number | null | undefined): string => {
   if (val === undefined || val === null) return "";
   return String(val).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 };
 
-export const getXPriorityLevel = (val: any): number => {
+export const getXPriorityLevel = (val: string | number | null | undefined): number => {
   const norm = normalizeXValue(val);
   if (!norm) return 0;
   if (norm.startsWith("5")) return 5;

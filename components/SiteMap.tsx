@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useMemo } from 'react';
 import * as L from 'leaflet';
 import { GlobalFileRow } from '../types';
 import { REGION_COORDINATES } from '../constants';
-import { Map as MapIcon, Info, MapPin, Maximize, Compass } from 'lucide-react';
+import { Map as MapIcon, Info, Compass } from 'lucide-react';
 
 interface SiteMapProps {
   data: GlobalFileRow[];
@@ -130,7 +130,7 @@ export const SiteMap: React.FC<SiteMapProps> = ({ data, filters }) => {
     }
 
     return () => resizeObserver.disconnect();
-  }, [siteStats]);
+  }, [siteStats, mapContainerRef, mapRef, markersRef]);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">

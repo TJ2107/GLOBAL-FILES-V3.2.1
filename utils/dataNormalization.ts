@@ -59,7 +59,7 @@ const findCanonicalKey = (rawHeader: string): string | null => {
 /**
  * Transforme un objet brut (issu d'Excel) en GlobalFileRow avec les clés officielles
  */
-export const normalizeRow = (rawRow: any): GlobalFileRow => {
+export const normalizeRow = (rawRow: Record<string, string | number | Date | null>): GlobalFileRow => {
   const normalizedRow: GlobalFileRow = {};
   
   Object.keys(rawRow).forEach(key => {
