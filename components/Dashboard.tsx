@@ -11,6 +11,7 @@ import {
   Battery, AlertTriangle, Database, Layers, CheckSquare
 } from 'lucide-react';
 import { downloadChartAsJpg, downloadTableAsJpg } from '../utils/chartHelpers';
+import { parseDate } from '../utils/dateHelpers';
 
 interface DashboardProps {
   data: GlobalFileRow[];
@@ -27,34 +28,6 @@ const X_COLORS: Record<string, string> = {
   [XStatus.STHIC_ATV_HTC]: "#F59E0B",
   [XStatus.HTC]: "#f97316",
   "Autre": "#94A3B8"
-};
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (!trimmed) return null;
-    if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts.length === 3) {
-        const dayPart = parts[0];
-        const monthPart = parts[1];
-        const yearAndTime = parts[2].split(' ');
-        const yearPart = yearAndTime[0];
-        const date = new Date(parseInt(yearPart), parseInt(monthPart) - 1, parseInt(dayPart));
-        if (yearAndTime[1]) {
-          const timeParts = yearAndTime[1].split(':');
-          date.setHours(parseInt(timeParts[0]), parseInt(timeParts[1] || '0'));
-        }
-        return date;
-      }
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
 };
 
 const toInputDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

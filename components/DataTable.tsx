@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { parseDate } from '../utils/dateHelpers';
 import { GlobalFileRow, XStatus } from '../types';
 import { COLUMNS, getRowColorClass, SWO_OPTIONS, X_OPTIONS, getXPriorityLevel } from '../constants';
 import { Search, Columns, CalendarRange, XCircle, MoreVertical, Trash2, Copy, ClipboardPaste, Palette, ArrowUpDown, Table, Bookmark, Save, Trash, FilterX } from 'lucide-react';
@@ -48,23 +49,6 @@ const COLOR_OPTIONS = [
   { label: 'Vert (1- CLOSED)', value: XStatus.CLOSED, color: 'bg-green-100' },
   { label: 'Blanc (Autres)', value: 'WHITE', color: 'bg-white border' },
 ];
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (!trimmed) return null;
-    if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
-};
 
 const formatDateTime = (val: string | number | Date | null | undefined): string => {
   const d = parseDate(val);

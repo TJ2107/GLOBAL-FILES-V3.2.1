@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { downloadChartAsJpg } from '../utils/chartHelpers';
 import * as XLSX from 'xlsx';
+import { parseDate } from '../utils/dateHelpers';
 
 interface TTFAnalysisProps {
   data: GlobalFileRow[];
@@ -34,23 +35,6 @@ const COLORS = {
   missed: '#f43f5e',
   volume: '#e2e8f0',
   indigo: '#4f46e5'
-};
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (!trimmed) return null;
-    if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
 };
 
 const formatDate = (date: string | number | Date | null | undefined): string => {

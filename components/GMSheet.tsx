@@ -12,6 +12,7 @@ import {
   FilePlus
 } from 'lucide-react';
 import { downloadChartAsJpg } from '../utils/chartHelpers';
+import { parseDate } from '../utils/dateHelpers';
 
 interface GMSheetProps {
   data: GlobalFileRow[];
@@ -31,21 +32,11 @@ const COLORS = {
   htc: '#f97316'
 };
 
-
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    if (val.includes('/')) {
-      const parts = val.split('/');
-      if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    }
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
+const PENDING_X_COLORS: Record<string, string> = {
+  "STHIC TRAVAUX EN COURS": COLORS.tvx,
+  "STHIC SPA": COLORS.spa,
+  "STHIC ATTENTE VALIDATION HTC": COLORS.atv,
+  "HTC DIVERS": COLORS.htc
 };
 
 export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitchToData }) => {
@@ -56,9 +47,14 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
   const [period, setPeriod] = useState<{start: string, end: string}>(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    // Fix: call getMonth() instead of using the method reference.
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const formatDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    // Use local date string format YYYY-MM-DD
+    const formatDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
     return { start: formatDate(start), end: formatDate(end) };
   });
 
@@ -77,15 +73,16 @@ export const GMSheet: React.FC<GMSheetProps> = ({ data, onFilterChange, onSwitch
     const statusXCounts: Record<string, number> = { "STHIC TRAVAUX EN COURS": 0, "STHIC SPA": 0, "STHIC ATTENTE VALIDATION HTC": 0, "HTC DIVERS": 0 };
     const regionStockMap: Record<string, number> = {};
     
-    const startDate = period.start ? new Date(period.start) : null;
-    const endDate = period.end ? new Date(period.end) : null;
+    const startDate = period.start ? new Date(period.start + 'T00:00:00') : null;
+    const endDate = period.end ? new Date(period.end + 'T23:59:59.999') : null;
     
-    if (startDate) startDate.setHours(0,0,0,0);
-    if (endDate) endDate.setHours(23,59,59,999);
-
     data.forEach(row => {
       const creationDate = parseDate(row["Date de création du SWO"]);
       const closingDate = parseDate(row["Closing date"]) || parseDate(row["Date de Clôture"]);
+      
+      // Normalize dates to remove time component for comparison if needed, 
+      // but here we want to compare against the full day range of the period.
+      
       const xStatus = String(row["X"] || "");
       const region = String(row["Region"] || "INCONNUE").trim().toUpperCase();
       

@@ -10,6 +10,7 @@ import {
   User, Search, ChevronRight, Globe, ArrowRight
 } from 'lucide-react';
 import { downloadChartAsJpg } from '../utils/chartHelpers';
+import { parseDate } from '../utils/dateHelpers';
 
 interface TASAnalysisProps {
   data: GlobalFileRow[];
@@ -21,27 +22,6 @@ const COLORS = [
   '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
   '#ec4899', '#06b6d4', '#f97316', '#64748b'
 ];
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts.length === 3) {
-        const d = parseInt(parts[0]);
-        const m = parseInt(parts[1]) - 1;
-        const y = parseInt(parts[2]);
-        return new Date(y, m, d);
-      }
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
-};
 
 const formatDate = (date: string | number | Date | null | undefined): string => {
   const d = parseDate(date);

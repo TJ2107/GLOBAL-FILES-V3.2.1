@@ -11,6 +11,7 @@ import {
   CalendarCheck, X, Eye, ListFilter, CheckCircle2, AlertTriangle, FileWarning, Zap, MessageSquareOff, PlusCircle, Activity
 } from 'lucide-react';
 import { downloadChartAsJpg } from '../utils/chartHelpers';
+import { parseDate, formatDate } from '../utils/dateHelpers';
 
 interface DailyStatusProps {
   data: GlobalFileRow[];
@@ -36,32 +37,6 @@ const getPriorityStyle = (priority: string) => {
   if (p.includes('P2') || p.includes('2')) return 'bg-orange-500 text-white border-orange-600';
   if (p.includes('P3') || p.includes('3')) return 'bg-blue-500 text-white border-blue-600';
   return 'bg-gray-500 text-white border-gray-600';
-};
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    if (val.includes('/')) {
-      const parts = val.split('/');
-      if (parts.length === 3) {
-        const dayPart = parts[0];
-        const monthPart = parts[1];
-        const yearAndTime = parts[2].split(' ');
-        const yearPart = yearAndTime[0];
-        const date = new Date(parseInt(yearPart), parseInt(monthPart) - 1, parseInt(dayPart));
-        if (yearAndTime[1]) {
-          const timeParts = yearAndTime[1].split(':');
-          date.setHours(parseInt(timeParts[0]), parseInt(timeParts[1] || '0'));
-        }
-        return date;
-      }
-    }
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
 };
 
 const toInputDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -531,9 +506,3 @@ export const DailyStatus: React.FC<DailyStatusProps> = ({ data, onFilterChange, 
     </div>
   );
 };
-
-function formatDate(date: string | number | Date | null | undefined): string {
-  const d = parseDate(date);
-  if (!d) return "-";
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}

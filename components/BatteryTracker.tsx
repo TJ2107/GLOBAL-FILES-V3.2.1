@@ -7,6 +7,7 @@ import {
   Zap, Clock, Info
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { parseDate } from '../utils/dateHelpers';
 
 interface BatteryTrackerProps {
   data: GlobalFileRow[];
@@ -25,22 +26,6 @@ interface SiteBatteryStatus {
 
 const EXPIRATION_THRESHOLD_MONTHS = 7;
 const WARNING_THRESHOLD_MONTHS = 6;
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
-};
 
 const getMonthsDifference = (startDate: Date, endDate: Date) => {
   return (
@@ -62,7 +47,12 @@ export const BatteryTracker: React.FC<BatteryTrackerProps> = ({ data }) => {
     data.forEach(row => {
       const desc = String(row["Description"] || "").toLowerCase();
       const site = String(row["Nom du site"] || "Inconnu");
-      if (desc.includes("remplacement batterie ge")) {
+      
+      // Broaden search for battery replacements
+      const isBatteryTask = (desc.includes("remplacement") || desc.includes("swap") || desc.includes("changement")) && 
+                           (desc.includes("batterie") || desc.includes("battery"));
+
+      if (isBatteryTask) {
         if (!sitesMap[site]) sitesMap[site] = [];
         sitesMap[site].push(row);
       }

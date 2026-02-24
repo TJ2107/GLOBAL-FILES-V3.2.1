@@ -8,28 +8,13 @@ import {
   ChevronLeft, ChevronRight, Target, Hash
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { parseDate } from '../utils/dateHelpers';
 
 interface PMTrackerProps {
   data: GlobalFileRow[];
   onFilterChange: (column: string, value: string) => void;
   onSwitchToData: () => void;
 }
-
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
-};
 
 const formatDateDisplay = (val: string | number | Date | null | undefined): string => {
   const d = parseDate(val);

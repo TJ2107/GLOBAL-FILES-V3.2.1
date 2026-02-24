@@ -7,6 +7,7 @@ import {
   ShieldCheck, Zap, Info, AlertTriangle, Cpu
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { parseDate } from '../utils/dateHelpers';
 
 interface BeltTrackerProps {
   data: GlobalFileRow[];
@@ -28,22 +29,6 @@ const EXPIRATION_THRESHOLD_DAYS = 180;
 const WARNING_THRESHOLD_DAYS = 150;
 const HOURS_PER_DAY_ESTIMATE = 5.5;
 
-const parseDate = (val: string | number | Date | null | undefined): Date | null => {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000));
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (trimmed.includes('/')) {
-      const parts = trimmed.split('/');
-      if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
-};
-
 export const BeltTracker: React.FC<BeltTrackerProps> = ({ data }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'RED' | 'ORANGE' | 'GREEN'>('ALL');
@@ -58,7 +43,7 @@ export const BeltTracker: React.FC<BeltTrackerProps> = ({ data }) => {
       const rawSiteName = String(row["Nom du site"] || "Inconnu");
       const siteKey = rawSiteName.trim().toUpperCase();
       
-      const isBeltTask = desc.includes("courroie") || desc.includes("swap courroie") || desc.includes("remplacement courroie");
+      const isBeltTask = desc.includes("courroie") || desc.includes("belt") || desc.includes("swap courroie") || desc.includes("remplacement courroie");
 
       if (isBeltTask) {
         if (!sitesMap[siteKey]) sitesMap[siteKey] = [];
