@@ -14,6 +14,7 @@ import { BeltTracker } from './components/BeltTracker';
 import { ExportManager } from './components/ExportManager';
 import { PredictiveAI } from './components/PredictiveAI';
 import { SettingsPanel } from './components/SettingsPanel';
+import { MigrationAssistant } from './components/MigrationAssistant';
 import { 
   Layout, Database, PieChart, Calendar, Timer, 
   Briefcase, Battery, Settings2, Loader2, 
@@ -50,6 +51,7 @@ const App: React.FC = () => {
   // State for alert thresholds
   const [batteryThreshold, setBatteryThreshold] = useState<number>(7);
   const [beltThreshold, setBeltThreshold] = useState<number>(180);
+  const [needsMigration, setNeedsMigration] = useState(false);
 
   // LOGIQUE DE CENTRALISATION DES ALERTES
   const globalAlerts = useMemo(() => {
@@ -115,21 +117,33 @@ const App: React.FC = () => {
   }, [data, filters]);
 
   useEffect(() => {
-    const savedData = localStorage.getItem('globalFiles_data');
-    if (savedData) {
+    const fetchData = async () => {
       try {
-        const parsed = JSON.parse(savedData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setData(parsed);
+        const response = await fetch('/api/data');
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const dbData = await response.json();
+        if (Array.isArray(dbData) && dbData.length > 0) {
+          setData(dbData);
           setActiveTab('dashboard');
         }
-      } catch (e) { console.error(e); }
-    }
+      } catch (error) {
+        console.error('Error fetching data from API:', error);
+        // If API fails, check for local data to offer migration
+        const savedData = localStorage.getItem('globalFiles_data');
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setNeedsMigration(true);
+            }
+          } catch {}
+        }
+      }
+    };
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('globalFiles_data', JSON.stringify(data));
-  }, [data]);
+
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('globalFiles_settings');
@@ -144,20 +158,23 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleDataLoaded = (newData: GlobalFileRow[], append: boolean) => {
-    if (append && data.length > 0) {
-      const swoMap = new Map<string, GlobalFileRow>();
-      data.forEach(row => {
-        const key = String(row["N° SWO"] || Math.random());
-        swoMap.set(key, row);
+  const handleDataLoaded = async (newData: GlobalFileRow[], append: boolean) => {
+    try {
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newData),
       });
-      newData.forEach(row => {
-        const key = String(row["N° SWO"] || Math.random());
-        swoMap.set(key, row);
-      });
-      setData(Array.from(swoMap.values()));
-    } else {
-      setData(newData);
+      if (!response.ok) throw new Error('Failed to save data');
+      
+      // Re-fetch data to ensure consistency
+      const fetchResponse = await fetch('/api/data');
+      const dbData = await fetchResponse.json();
+      setData(dbData);
+
+    } catch (error) {
+      console.error('Error saving data:', error);
+      // Optionally, show an error message to the user
     }
     setActiveTab('dashboard');
     setIsSidebarOpen(false);
@@ -203,6 +220,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden font-sans">
+      {needsMigration && <MigrationAssistant onMigrationComplete={() => window.location.reload()} />}
       {/* NOTIFICATION DRAWER */}
       {isNotifOpen && (
         <div className="fixed inset-0 z-[100] flex justify-end animate-in fade-in duration-300">
@@ -336,7 +354,16 @@ const App: React.FC = () => {
                     <div className="max-w-md w-full bg-white p-12 rounded-[4rem] shadow-2xl text-center space-y-10">
                       <AlertTriangle className="w-14 h-14 text-red-600 mx-auto animate-pulse" />
                       <h3 className="text-3xl font-black uppercase italic">Purger tout</h3>
-                      <button onClick={() => { setData([]); setFilters({}); localStorage.removeItem('globalFiles_data'); setActiveTab('upload'); }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black hover:bg-red-700 transition-all">CONFIRMER</button>
+                      <button onClick={async () => { 
+                        try {
+                          await fetch('/api/data', { method: 'DELETE' });
+                          setData([]); 
+                          setFilters({}); 
+                          setActiveTab('upload'); 
+                        } catch (e) {
+                          console.error("Failed to clear data", e);
+                        }
+                      }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black hover:bg-red-700 transition-all">CONFIRMER</button>
                     </div>
                   </div>
                 )}
