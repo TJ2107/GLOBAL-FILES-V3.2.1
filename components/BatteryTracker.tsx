@@ -46,11 +46,16 @@ export const BatteryTracker: React.FC<BatteryTrackerProps> = ({ data }) => {
 
     data.forEach(row => {
       const desc = String(row["Description"] || "").toLowerCase();
+      const swoState = String(row["State SWO"] || "").toLowerCase();
       const site = String(row["Nom du site"] || "Inconnu");
       
-      // Broaden search for battery replacements
-      const isBatteryTask = (desc.includes("remplacement") || desc.includes("swap") || desc.includes("changement")) && 
-                           (desc.includes("batterie") || desc.includes("battery"));
+      // Détection précise des phrases de remplacement batterie GE
+      const isBatteryTask = (
+        desc.includes("remplacement batterie ge") ||
+        desc.includes("swap batterie ge") ||
+        desc.includes("remplacement battery ge") ||
+        desc.includes("swap battery ge")
+      ) && swoState === "closed";
 
       if (isBatteryTask) {
         if (!sitesMap[site]) sitesMap[site] = [];
