@@ -78,14 +78,3 @@ export enum SWOState {
   CLOSED = "CLOSED",
   OPEN = "OPEN"
 }
-
-export interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  VIEWER = 'viewer'
-}

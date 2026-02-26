@@ -46,16 +46,11 @@ export const BatteryTracker: React.FC<BatteryTrackerProps> = ({ data }) => {
 
     data.forEach(row => {
       const desc = String(row["Description"] || "").toLowerCase();
-      const swoState = String(row["State SWO"] || "").toLowerCase();
       const site = String(row["Nom du site"] || "Inconnu");
       
-      // Détection précise des phrases de remplacement batterie GE
-      const isBatteryTask = (
-        desc.includes("remplacement batterie ge") ||
-        desc.includes("swap batterie ge") ||
-        desc.includes("remplacement battery ge") ||
-        desc.includes("swap battery ge")
-      ) && swoState === "closed";
+      // Broaden search for battery replacements
+      const isBatteryTask = (desc.includes("remplacement") || desc.includes("swap") || desc.includes("changement")) && 
+                           (desc.includes("batterie") || desc.includes("battery"));
 
       if (isBatteryTask) {
         if (!sitesMap[site]) sitesMap[site] = [];
@@ -64,21 +59,20 @@ export const BatteryTracker: React.FC<BatteryTrackerProps> = ({ data }) => {
     });
 
     const results: SiteBatteryStatus[] = Object.entries(sitesMap).map(([siteName, rows]) => {
-      // Trier les SWO par date de clôture du plus récent au plus ancien
-      const sortedRows = rows.sort((a, b) => {
-        const dateA = parseDate(a["Closing date"]) || parseDate(a["Date de Clôture"]) || new Date(0);
-        const dateB = parseDate(b["Closing date"]) || parseDate(b["Date de Clôture"]) || new Date(0);
-        return dateB.getTime() - dateA.getTime(); // Tri décroissant
+      let latestDate: Date | null = null;
+      let lastSWO = "N/A";
+      let lastID = "N/A";
+      let region = "Inconnu";
+
+      rows.forEach(r => {
+        const date = parseDate(r["Closing date"]) || parseDate(r["Date de Clôture"]);
+        if (date && (!latestDate || date > latestDate)) {
+          latestDate = date;
+          lastSWO = String(r["N° SWO"] || "N/A");
+          lastID = String(r["ID"] || "N/A");
+          region = String(r["Region"] || "Inconnu");
+        }
       });
-
-      // Prendre uniquement le SWO le plus récent pour éviter les doublons
-      const latestRow = sortedRows[0];
-      if (!latestRow) return null;
-
-      const latestDate = parseDate(latestRow["Closing date"]) || parseDate(latestRow["Date de Clôture"]);
-      const lastSWO = String(latestRow["N° SWO"] || "N/A");
-      const lastID = String(latestRow["ID"] || "N/A");
-      const region = String(latestRow["Region"] || "Inconnu");
 
       let monthsElapsed = 0;
       let status: 'RED' | 'ORANGE' | 'GREEN' = 'GREEN';
@@ -98,7 +92,7 @@ export const BatteryTracker: React.FC<BatteryTrackerProps> = ({ data }) => {
     });
 
     return results
-      .filter(r => r !== null && r.lastReplacementDate !== null)
+      .filter(r => r.lastReplacementDate !== null)
       .sort((a, b) => b.monthsElapsed - a.monthsElapsed);
   }, [data]);
 
