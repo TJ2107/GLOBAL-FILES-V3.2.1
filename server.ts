@@ -8,6 +8,28 @@ import { GlobalFileRow } from './types';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Setup file logging to debug crashes
+const logStream = fs.createWriteStream(path.join(__dirname, 'server-debug.log'), { flags: 'a' });
+const originalLog = console.log;
+const originalError = console.error;
+console.log = (...args) => {
+  const msg = new Date().toISOString() + ' LOG: ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ') + '\n';
+  logStream.write(msg);
+  originalLog(...args);
+};
+console.error = (...args) => {
+  const msg = new Date().toISOString() + ' ERR: ' + args.map(a => typeof a === 'object' ? (a.stack || JSON.stringify(a)) : a).join(' ') + '\n';
+  logStream.write(msg);
+  originalError(...args);
+};
+
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+});
+
 // Initialize Database
 const db = new Database('global-files.db');
 db.pragma('journal_mode = WAL');
@@ -20,69 +42,72 @@ if (fs.existsSync(migrationPath)) {
 }
 
 // Helper to map JSON to DB
-const mapJsonToDb = (row: Partial<GlobalFileRow>): Record<string, string | number | null> => ({
-    swo_number: row["N° SWO"] ?? null,
-    id: row["ID"] ?? null,
-    site_name: row["Nom du site"] ?? null,
-    region: row["Region"] ?? null,
-    priority: row["Priorité"] ?? null,
-    assigned_to: row["Assigned to"] ?? null,
-    short_description: row["Short description"] ?? null,
-    description: row["Description"] ?? null,
-    swo_creation_date: row["Date de création du SWO"] ?? null,
-    report_date: row["Date de remontée"] ?? null,
-    swo_closing_date: row["Date de Clôture"] ?? null,
-    planning_date: row["Date de planification"] ?? null,
-    intervenant: row["Intervenant"] ?? null,
-    fit_dp_number: row["N° FIT &/ou DP"] ?? null,
-    client_transmission_date: row["Date de transmission au client"] ?? null,
-    client_validation_date: row["Date de validation Client"] ?? null,
-    comments_reco: row["Comments Reco"] ?? null,
-    commentary: row["Commentaire"] ?? null,
-    closing_date: row["Closing date"] ?? null,
-    swo_state: row["State SWO"] ?? null,
-    x_status: row["X"] ?? null,
-    mro_number: row["N°MRO"] ?? null,
-    amount_fcfa: row["Montant (Fcfa)"] ?? null,
-    pm_date: row["PM Date"] ?? null,
-    pm_types: row["Types de PM"] ?? null,
-    battery_swap: row["SWAP BATTERIE"] ?? null,
-    belt_swap: row["SWAP COURROIE"] ?? null,
-    swo_to_cancel: row["SWO A CANCELLE"] ?? null,
-    cm_removed: row["CM RETIRES"] ?? null,
-    pm_removed: row["PM RETIRES"] ?? null,
-    tas_status: row["TAS Status"] ?? null,
-    comment: row["Comment"] ?? null,
-    fdwo: row["FDWO"] ?? null,
-    names_site: row["Names site"] ?? null,
-    refuelers_reason: row["Raison des refuelleurs"] ?? null,
-    executed_date: row["Date executee"] ?? null,
-    planned_qty: row["Qte Prevue"] ?? null,
-    delivered_qty: row["Qte Livres"] ?? null,
-    statuses: row["Statuts"] ?? null,
-    cph: row["CPH"] ?? null,
-    site_application: row["Application Site"] ?? null,
-    grid_status: row["Grid statut"] ?? null,
-    pm_number: row["PM number"] ?? null,
-    pm_planned: row["PM Planned"] ?? null,
-    pm_executed_date: row["PM date execute"] ?? null,
-    pm_rescheduled_date: row["PM date replanifiée"] ?? null,
-    fe_names: row["FE names"] ?? null,
-    rescheduling_reason: row["Raison des replanificatio"] ?? null,
-    status: row["status"] ?? null,
-    dg_service_01_number: row["DG Service 01 Number"] ?? null,
-    dg_service_01_executed: row["DG Service 01 Executée"] ?? null,
-    dg_service_01_status: row["DG Service 01 Status"] ?? null,
-    dg_service_02_status: row["DG Service 02 Status"] ?? null,
-    dg_service_02_status2: row["DG Service 02 Status2"] ?? null,
-    dg_service_03_executed: row["DG Service 03 Executée"] ?? null,
-    dg_service_03_status: row["DG Service 03 Status"] ?? null,
-    pm_aircon_number: row["PM aircon Number"] ?? null,
-    pm_aircon_executed: row["PM aircon Executée"] ?? null,
-    pm_aircon_status: row["PM aircon Statut"] ?? null,
-    pm_aircon_executed_alt: row["PM AIRCON Executée"] ?? null,
-    pm_aircon_status_alt: row["PM AIRCON Status"] ?? null,
-});
+const mapJsonToDb = (row: Partial<GlobalFileRow> | null | undefined): Record<string, string | number | null> => {
+  const safeRow = row || {};
+  return {
+    swo_number: safeRow["N° SWO"] ?? null,
+    id: safeRow["ID"] ?? null,
+    site_name: safeRow["Nom du site"] ?? null,
+    region: safeRow["Region"] ?? null,
+    priority: safeRow["Priorité"] ?? null,
+    assigned_to: safeRow["Assigned to"] ?? null,
+    short_description: safeRow["Short description"] ?? null,
+    description: safeRow["Description"] ?? null,
+    swo_creation_date: safeRow["Date de création du SWO"] ?? null,
+    report_date: safeRow["Date de remontée"] ?? null,
+    swo_closing_date: safeRow["Date de Clôture"] ?? null,
+    planning_date: safeRow["Date de planification"] ?? null,
+    intervenant: safeRow["Intervenant"] ?? null,
+    fit_dp_number: safeRow["N° FIT &/ou DP"] ?? null,
+    client_transmission_date: safeRow["Date de transmission au client"] ?? null,
+    client_validation_date: safeRow["Date de validation Client"] ?? null,
+    comments_reco: safeRow["Comments Reco"] ?? null,
+    commentary: safeRow["Commentaire"] ?? null,
+    closing_date: safeRow["Closing date"] ?? null,
+    swo_state: safeRow["State SWO"] ?? null,
+    x_status: safeRow["X"] ?? null,
+    mro_number: safeRow["N°MRO"] ?? null,
+    amount_fcfa: safeRow["Montant (Fcfa)"] ?? null,
+    pm_date: safeRow["PM Date"] ?? null,
+    pm_types: safeRow["Types de PM"] ?? null,
+    battery_swap: safeRow["SWAP BATTERIE"] ?? null,
+    belt_swap: safeRow["SWAP COURROIE"] ?? null,
+    swo_to_cancel: safeRow["SWO A CANCELLE"] ?? null,
+    cm_removed: safeRow["CM RETIRES"] ?? null,
+    pm_removed: safeRow["PM RETIRES"] ?? null,
+    tas_status: safeRow["TAS Status"] ?? null,
+    comment: safeRow["Comment"] ?? null,
+    fdwo: safeRow["FDWO"] ?? null,
+    names_site: safeRow["Names site"] ?? null,
+    refuelers_reason: safeRow["Raison des refuelleurs"] ?? null,
+    executed_date: safeRow["Date executee"] ?? null,
+    planned_qty: safeRow["Qte Prevue"] ?? null,
+    delivered_qty: safeRow["Qte Livres"] ?? null,
+    statuses: safeRow["Statuts"] ?? null,
+    cph: safeRow["CPH"] ?? null,
+    site_application: safeRow["Application Site"] ?? null,
+    grid_status: safeRow["Grid statut"] ?? null,
+    pm_number: safeRow["PM number"] ?? null,
+    pm_planned: safeRow["PM Planned"] ?? null,
+    pm_executed_date: safeRow["PM date execute"] ?? null,
+    pm_rescheduled_date: safeRow["PM date replanifiée"] ?? null,
+    fe_names: safeRow["FE names"] ?? null,
+    rescheduling_reason: safeRow["Raison des replanificatio"] ?? null,
+    status: safeRow["status"] ?? null,
+    dg_service_01_number: safeRow["DG Service 01 Number"] ?? null,
+    dg_service_01_executed: safeRow["DG Service 01 Executée"] ?? null,
+    dg_service_01_status: safeRow["DG Service 01 Status"] ?? null,
+    dg_service_02_status: safeRow["DG Service 02 Status"] ?? null,
+    dg_service_02_status2: safeRow["DG Service 02 Status2"] ?? null,
+    dg_service_03_executed: safeRow["DG Service 03 Executée"] ?? null,
+    dg_service_03_status: safeRow["DG Service 03 Status"] ?? null,
+    pm_aircon_number: safeRow["PM aircon Number"] ?? null,
+    pm_aircon_executed: safeRow["PM aircon Executée"] ?? null,
+    pm_aircon_status: safeRow["PM aircon Statut"] ?? null,
+    pm_aircon_executed_alt: safeRow["PM AIRCON Executée"] ?? null,
+    pm_aircon_status_alt: safeRow["PM AIRCON Status"] ?? null,
+  };
+};
 
 // Helper to map DB to JSON
 const mapDbToJson = (row: Record<string, unknown>): Partial<GlobalFileRow> => ({
@@ -162,11 +187,54 @@ async function startServer() {
 
   app.get('/api/data', (req, res) => {
     try {
-      const results = db.prepare('SELECT * FROM swo_data').all();
-      const mappedResults = results.map((row: any) => mapDbToJson(row));
-      res.json(mappedResults);
+      res.setHeader('Content-Type', 'application/json');
+      res.write('[');
+      
+      const stmt = db.prepare('SELECT * FROM swo_data');
+      const iterator = stmt.iterate();
+      let isFirst = true;
+      
+      const sendChunk = () => {
+        try {
+          let count = 0;
+          let chunk = '';
+          
+          while (count < 1000) {
+            const { value: row, done } = iterator.next();
+            
+            if (done) {
+              res.write(chunk + ']');
+              res.end();
+              return;
+            }
+            
+            if (!isFirst) {
+              chunk += ',';
+            }
+            isFirst = false;
+            chunk += JSON.stringify(mapDbToJson(row as Record<string, unknown>));
+            count++;
+          }
+          
+          if (!res.write(chunk)) {
+            res.once('drain', sendChunk);
+          } else {
+            setImmediate(sendChunk);
+          }
+        } catch (err) {
+          console.error('Error while streaming data:', err);
+          res.end();
+        }
+      };
+      
+      sendChunk();
     } catch (e) {
-      res.status(500).json({ error: (e as Error).message });
+      console.error('Error in GET /api/data:', e);
+      if (!res.headersSent) {
+        res.status(500).json({ error: (e as Error).message });
+      } else {
+        res.end();
+      }
     }
   });
 

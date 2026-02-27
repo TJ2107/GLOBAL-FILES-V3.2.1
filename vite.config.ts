@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
         hmr: false,
+        watch: {
+          ignored: ['**/global-files.db*', '**/server-debug.log']
+        }
       },
       plugins: [react()],
       define: {

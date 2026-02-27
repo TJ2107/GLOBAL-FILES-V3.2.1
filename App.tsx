@@ -152,12 +152,17 @@ const App: React.FC = () => {
         if (!deleteResponse.ok) throw new Error('Failed to clear existing data');
       }
 
-      const response = await fetch('/api/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newData),
-      });
-      if (!response.ok) throw new Error('Failed to save data');
+      // Send data in chunks to prevent server OOM (Out of Memory) errors
+      const CHUNK_SIZE = 5000;
+      for (let i = 0; i < newData.length; i += CHUNK_SIZE) {
+        const chunk = newData.slice(i, i + CHUNK_SIZE);
+        const response = await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chunk),
+        });
+        if (!response.ok) throw new Error(`Failed to save data chunk ${i / CHUNK_SIZE + 1}`);
+      }
       
       // Re-fetch data to ensure consistency
       const fetchResponse = await fetch('/api/data');
@@ -166,6 +171,7 @@ const App: React.FC = () => {
 
     } catch (error) {
       console.error('Error saving data:', error);
+      alert('Erreur lors de la sauvegarde des données: ' + (error as Error).message);
       // Optionally, show an error message to the user
     }
     setActiveTab('dashboard');
